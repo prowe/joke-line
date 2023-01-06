@@ -1,0 +1,54 @@
+Description: Demo of using AWS Connect to build a joke line
+Transform: 
+  - AWS::LanguageExtensions
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+
+  ConnectInstance:
+    Type: AWS::Connect::Instance
+    Properties:
+      Attributes:
+        AutoResolveBestVoices: true
+        ContactflowLogs: true
+        InboundCalls: true
+        OutboundCalls: true
+      IdentityManagementType: CONNECT_MANAGED
+      InstanceAlias: joke-line
+
+  PhoneNumber:
+    Type: AWS::Connect::PhoneNumber
+    Properties: 
+      TargetArn: !GetAtt ConnectInstance.Arn
+      Type: TOLL_FREE
+      CountryCode: US
+      Description: Joke line main number
+
+  InboundFlow:
+    Type: AWS::Connect::ContactFlow
+    Properties: 
+      InstanceArn: !GetAtt ConnectInstance.Arn
+      Name: main
+      Description: Joke line inbound flow
+      Type: CONTACT_FLOW
+      Content:
+        Fn::ToJsonString:
+          Version: "2019-10-30"
+          StartAction: start
+          Actions:
+            - Identifier: start
+              Type: MessageParticipant
+              Parameters:
+                Text: Hello World
+              Transitions:
+                NextAction: hang-up
+                Errors: []
+                Conditions: []
+            - Identifier: hang-up
+              Type: DisconnectParticipant
+              Parameters: {}
+              Transitions: {}
+
+Outputs:
+  MainPhoneNumber:
+    Value: !Ref PhoneNumber
