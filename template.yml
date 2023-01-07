@@ -2,9 +2,6 @@ Description: Demo of using AWS Connect to build a joke line
 Transform: 
   - AWS::LanguageExtensions
 Resources:
-  Bucket:
-    Type: AWS::S3::Bucket
-
   ConnectInstance:
     Type: AWS::Connect::Instance
     Properties:
@@ -15,6 +12,16 @@ Resources:
         OutboundCalls: true
       IdentityManagementType: CONNECT_MANAGED
       InstanceAlias: joke-line
+
+  # AdminUser:
+  #   Type: AWS::Connect::User
+  #   Properties:
+  #     InstanceArn: !GetAtt ConnectInstance.Arn
+  #     Username: admin
+  #     Password: admin
+  #     RoutingProfileArn: !Sub "${ConnectInstance.Arn}/routing-profile/Admin"
+  #     SecurityProfileArns:
+  #       - !Sub "${ConnectInstance.Arn}/security-profile/Admin"
 
   PhoneNumber:
     Type: AWS::Connect::PhoneNumber
@@ -28,7 +35,7 @@ Resources:
     Type: AWS::Connect::ContactFlow
     Properties: 
       InstanceArn: !GetAtt ConnectInstance.Arn
-      Name: main
+      Name: inbound
       Description: Joke line inbound flow
       Type: CONTACT_FLOW
       Content:
@@ -49,6 +56,13 @@ Resources:
               Parameters: {}
               Transitions: {}
 
+  InboundAssociation:
+    Type: SourceAllies::Connect::PhoneNumberFlowAssociation
+    Properties:
+      InstanceId: !GetAtt ConnectInstance.Arn
+      PhoneNumberId: !Ref PhoneNumber
+      ContactFlowId: !GetAtt InboundFlow.ContactFlowArn
+
 Outputs:
   MainPhoneNumber:
-    Value: !Ref PhoneNumber
+    Value: !GetAtt PhoneNumber.Address

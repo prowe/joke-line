@@ -1,0 +1,47 @@
+{
+    "typeName": "SourceAllies::Connect::PhoneNumberFlowAssociation",
+    "description": "Associates a phone number with a contact flow",
+    "sourceUrl": "https://github.com/aws-cloudformation/aws-cloudformation-rpdk.git",
+    "definitions": {
+    },
+    "properties": {
+        "InstanceId": {
+            "description": "ID of the instance",
+            "type": "string"
+        },
+        "PhoneNumberId": {
+            "description": "Id of the phone number",
+            "type": "string"
+        },
+        "ContactFlowId": {
+            "description": "Id of the flow",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "InstanceId",
+        "PhoneNumberId",
+        "ContactFlowId"
+    ],
+    "primaryIdentifier": [
+        "/properties/PhoneNumberId"
+    ],
+    "createOnlyProperties": [
+        "/properties/PhoneNumberId"
+    ],
+    "handlers": {
+        "create": {
+            "permissions": [
+                "connect:AssociatePhoneNumberContactFlow",
+                "logs:*"
+            ]
+        },
+        "delete": {
+            "permissions": [
+                "connect:DisassociatePhoneNumberContactFlow",
+                "logs:*"
+            ]
+        }
+    }
+}
