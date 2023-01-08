@@ -31,8 +31,8 @@ Resources:
               - Effect: Allow
                 Action:
                 - "connect:AssociatePhoneNumberContactFlow"
+                - "connect:DescribePhoneNumber"
                 - "connect:DisassociatePhoneNumberContactFlow"
-                - "logs:*"
                 Resource: "*"
 Outputs:
   ExecutionRoleArn:

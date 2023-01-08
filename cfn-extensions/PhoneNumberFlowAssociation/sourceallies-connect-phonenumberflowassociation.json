@@ -33,14 +33,17 @@
     "handlers": {
         "create": {
             "permissions": [
-                "connect:AssociatePhoneNumberContactFlow",
-                "logs:*"
+                "connect:AssociatePhoneNumberContactFlow"
             ]
         },
         "delete": {
             "permissions": [
-                "connect:DisassociatePhoneNumberContactFlow",
-                "logs:*"
+                "connect:DisassociatePhoneNumberContactFlow"
+            ]
+        },
+        "read": {
+            "permissions": [
+                "connect:DescribePhoneNumber"
             ]
         }
     }

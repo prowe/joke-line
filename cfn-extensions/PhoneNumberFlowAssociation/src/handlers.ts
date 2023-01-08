@@ -12,6 +12,7 @@ import {
     SessionProxy,
 } from '@amazon-web-services-cloudformation/cloudformation-cli-typescript-lib';
 import AWS from 'aws-sdk';
+import { AssociatePhoneNumberContactFlowRequest, DisassociatePhoneNumberContactFlowRequest } from 'aws-sdk/clients/connect';
 import { ResourceModel, TypeConfigurationModel } from './models';
 
 interface CallbackContext extends Record<string, any> {}
@@ -40,20 +41,16 @@ class Resource extends BaseResource<ResourceModel> {
     ): Promise<ProgressEvent<ResourceModel, CallbackContext>> {
         const model = new ResourceModel(request.desiredResourceState);
         const progress = ProgressEvent.progress<ProgressEvent<ResourceModel, CallbackContext>>(model);
-        
-        const connect = new AWS.Connect();
-        await connect.associatePhoneNumberContactFlow({
-            InstanceId: model.instanceId,
-            PhoneNumberId: model.phoneNumberId,
-            ContactFlowId: model.contactFlowId
-        });
-
-        // Example:
         try {
-            if (session instanceof SessionProxy) {
-                const client = session.client('S3');
-            }
-            // Setting Status to success will signal to CloudFormation that the operation is complete
+            const req: AssociatePhoneNumberContactFlowRequest = {
+                InstanceId: model.instanceId,
+                PhoneNumberId: model.phoneNumberId,
+                ContactFlowId: model.contactFlowId
+            };
+            logger.log('Request: {}', req);
+            const client = session.client<AWS.Connect>('Connect');
+            await client.associatePhoneNumberContactFlow(req).promise();
+            logger.log('Phone number associated');
             progress.status = OperationStatus.Success;
         } catch(err) {
             logger.log(err);
@@ -86,18 +83,51 @@ class Resource extends BaseResource<ResourceModel> {
         logger: LoggerProxy,
         typeConfiguration: TypeConfigurationModel,
     ): Promise<ProgressEvent<ResourceModel, CallbackContext>> {
-        const model = new ResourceModel(request.desiredResourceState);
-        const progress = ProgressEvent.progress<ProgressEvent<ResourceModel, CallbackContext>>();
-        
-        const connect = new AWS.Connect();
-        await connect.disassociatePhoneNumberContactFlow({
-            InstanceId: model.instanceId,
-            PhoneNumberId: model.phoneNumberId
-        });
+        try {
+            const model = new ResourceModel(request.desiredResourceState);
+            const progress = ProgressEvent.progress<ProgressEvent<ResourceModel, CallbackContext>>();
 
-        progress.status = OperationStatus.Success;
-        return progress;
+            const req: DisassociatePhoneNumberContactFlowRequest = {
+                InstanceId: model.instanceId,
+                PhoneNumberId: model.phoneNumberId
+            };
+            logger.log('Request:', req);
+            const client = session.client<AWS.Connect>('Connect');
+            await client.disassociatePhoneNumberContactFlow(req).promise();
+            logger.log('Phone number disassociated');
+            progress.status = OperationStatus.Success;
+            return progress;
+        } catch (err) {
+            logger.log(err);
+            throw new exceptions.InternalFailure(err.message);
+        }
     }
+
+    /**
+     * CloudFormation invokes this handler as part of a stack update operation when
+     * detailed information about the resource's current state is required.
+     *
+     * @param session Current AWS session passed through from caller
+     * @param request The request object for the provisioning request passed to the implementor
+     * @param callbackContext Custom context object to allow the passing through of additional
+     * state or metadata between subsequent retries
+     * @param typeConfiguration Configuration data for this resource type, in the given account
+     * and region
+     * @param logger Logger to proxy requests to default publishers
+     */
+     @handlerEvent(Action.Read)
+     public async read(
+         session: Optional<SessionProxy>,
+         request: ResourceHandlerRequest<ResourceModel>,
+         callbackContext: CallbackContext,
+         logger: LoggerProxy,
+         typeConfiguration: TypeConfigurationModel,
+     ): Promise<ProgressEvent<ResourceModel, CallbackContext>> {
+         const model = new ResourceModel(request.desiredResourceState);
+         // TODO: put code here
+         const progress = ProgressEvent.success<ProgressEvent<ResourceModel, CallbackContext>>(model);
+         return progress;
+     }
 }
 
 // @ts-ignore // if running against v1.0.1 or earlier of plugin the 5th argument is not known but best to ignored (runtime code may warn)
