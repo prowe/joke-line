@@ -41,9 +41,38 @@ Resources:
       Content:
         Fn::ToJsonString:
           Version: "2019-10-30"
-          StartAction: start
+          StartAction: main-menu
           Actions:
-            - Identifier: start
+            - Identifier: main-menu
+              Type: "GetParticipantInput"
+              Parameters:
+                Text: |
+                  Welcome to the Source Allies Joke Line.
+                  Please listen closely as our menu options have changed.
+                  Press 1 to get a greeting.
+                  Press 3 to be transfered to an operator.
+                InputTimeLimitSeconds: "15"
+                StoreInput: "False"
+              Transitions:
+                NextAction: hang-up
+                Conditions:
+                  - NextAction: greet-caller
+                    Condition:
+                      Operator: Equals
+                      Operands: [ "1" ]
+                  - NextAction: transfer-to-paul
+                    Condition:
+                      Operator: Equals
+                      Operands: [ "3" ]
+                Errors:
+                  - ErrorType: InputTimeLimitExceeded
+                    NextAction: hang-up
+                  - ErrorType: NoMatchingCondition
+                    NextAction: main-menu
+                  - ErrorType: NoMatchingError
+                    NextAction: main-menu
+
+            - Identifier: greet-caller
               Type: MessageParticipant
               Parameters:
                 Text: Hello World
@@ -51,6 +80,26 @@ Resources:
                 NextAction: hang-up
                 Errors: []
                 Conditions: []
+                
+            - Identifier: transfer-to-paul
+              Type: "TransferParticipantToThirdParty"
+              Parameters:
+                ThirdPartyPhoneNumber: "+13098541649"
+                ThirdPartyConnectionTimeLimitSeconds: 30
+                ContinueFlowExecution: "True"
+                CallerId:
+                  Name: Joke Line
+              Transitions:
+                NextAction: hang-up
+                Conditions: []
+                Errors:
+                  - ErrorType: NoMatchingError
+                    NextAction: main-menu
+                  - ErrorType: ConnectionTimeLimitExceeded
+                    NextAction: main-menu
+                  - ErrorType: CallFailed
+                    NextAction: main-menu
+
             - Identifier: hang-up
               Type: DisconnectParticipant
               Parameters: {}
